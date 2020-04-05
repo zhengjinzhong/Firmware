@@ -101,6 +101,7 @@ px4_add_board(
 		perf
 		pwm
 		sd_bench
+		serial_test
 		shutdown
 		system_time
 		#tests # tests and test runner

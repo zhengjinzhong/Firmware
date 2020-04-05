@@ -81,6 +81,7 @@ px4_add_board(
 		reboot
 		reflect
 		sd_bench
+		serial_test
 		system_time
 		top
 		topic_listener

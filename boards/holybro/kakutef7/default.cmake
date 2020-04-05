@@ -68,6 +68,7 @@ px4_add_board(
 		reboot
 		reflect
 		sd_bench
+		serial_test
 		top
 		topic_listener
 		tune_control

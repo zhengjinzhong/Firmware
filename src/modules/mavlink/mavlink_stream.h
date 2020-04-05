@@ -66,7 +66,7 @@ public:
 	 *
 	 * @param interval the interval in microseconds (us) between messages
 	 */
-	void set_interval(const int interval) { _interval = interval; }
+	virtual void set_interval(const int interval) { _interval = interval; }
 
 	/**
 	 * Get the interval

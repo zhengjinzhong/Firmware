@@ -2406,15 +2406,35 @@ public:
 		return _trigger_sub.advertised() ? MAVLINK_MSG_ID_CAMERA_TRIGGER_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES : 0;
 	}
 
+	void set_interval(const int interval) override
+	{
+		MavlinkStream::set_interval(interval);
+
+		if (interval > 0) {
+			_trigger_sub.set_interval_us(interval);
+			_trigger_sub.registerCallback();
+
+		} else if (interval == 0)  {
+			_trigger_sub.unregisterCallback();
+
+		} else if (interval < 0) {
+			// unlimited
+			_trigger_sub.set_interval_us(0);
+			_trigger_sub.registerCallback();
+		}
+	}
+
 private:
-	uORB::Subscription _trigger_sub{ORB_ID(camera_trigger)};
+	uORB::SubscriptionCallbackWorkItem _trigger_sub;
 
 	/* do not allow top copying this class */
 	MavlinkStreamCameraTrigger(MavlinkStreamCameraTrigger &) = delete;
 	MavlinkStreamCameraTrigger &operator = (const MavlinkStreamCameraTrigger &) = delete;
 
 protected:
-	explicit MavlinkStreamCameraTrigger(Mavlink *mavlink) : MavlinkStream(mavlink)
+	explicit MavlinkStreamCameraTrigger(Mavlink *mavlink) :
+		MavlinkStream(mavlink),
+		_trigger_sub(mavlink, ORB_ID(camera_trigger))
 	{}
 
 	bool send() override

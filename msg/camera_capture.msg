@@ -1,6 +1,10 @@
 uint64 timestamp		# time since system start (microseconds)
 uint64 timestamp_utc		# Capture time in UTC / GPS time
+
+uint64 timestamp_trigger
+
 uint32 seq					# Image sequence number
+
 float64 lat					# Latitude in degrees (WGS84)
 float64 lon					# Longitude in degrees (WGS84)
 float32 alt					# Altitude (AMSL)

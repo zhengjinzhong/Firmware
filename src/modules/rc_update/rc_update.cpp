@@ -435,7 +435,6 @@ RCUpdate::Run()
 		_rc.channel_count = rc_input.channel_count;
 		_rc.rssi = rc_input.rssi;
 		_rc.signal_lost = signal_lost;
-		_rc.timestamp = rc_input.timestamp_last_signal;
 		_rc.frame_drop_count = rc_input.rc_lost_frame_count;
 
 		/* publish rc_channels topic even if signal is invalid, for debug */
@@ -449,7 +448,6 @@ RCUpdate::Run()
 			/* set mode slot to unassigned */
 			manual_control_setpoint.mode_slot = manual_control_setpoint_s::MODE_SLOT_NONE;
 			/* set the timestamp to the last signal time */
-			manual_control_setpoint.timestamp = rc_input.timestamp_last_signal;
 			manual_control_setpoint.data_source = manual_control_setpoint_s::SOURCE_RC;
 
 			/* limit controls */

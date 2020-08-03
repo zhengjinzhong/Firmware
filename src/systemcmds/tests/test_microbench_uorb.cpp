@@ -131,7 +131,6 @@ void MicroBenchORB::reset()
 	srand(time(nullptr));
 
 	// initialize with random data
-	status.timestamp = rand();
 	status.mission_failure = rand();
 
 	lpos.timestamp = rand();

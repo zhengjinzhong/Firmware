@@ -364,7 +364,6 @@ void VehicleIMU::Run()
 				if (publish_status || (hrt_elapsed_time(&_status.timestamp) >= 100_ms)) {
 					_status.accel_device_id = _accel_calibration.device_id();
 					_status.gyro_device_id = _gyro_calibration.device_id();
-					_status.timestamp = hrt_absolute_time();
 					_vehicle_imu_status_pub.publish(_status);
 				}
 
@@ -380,7 +379,6 @@ void VehicleIMU::Run()
 				imu.delta_velocity_dt = accel_integral_dt;
 				imu.delta_velocity_clipping = _delta_velocity_clipping;
 				imu.calibration_count = _accel_calibration.calibration_count() + _gyro_calibration.calibration_count();
-				imu.timestamp = hrt_absolute_time();
 				_vehicle_imu_pub.publish(imu);
 			}
 

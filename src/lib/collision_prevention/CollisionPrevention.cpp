@@ -72,7 +72,6 @@ CollisionPrevention::CollisionPrevention(ModuleParams *parent) :
 	static_assert(360 % INTERNAL_MAP_INCREMENT_DEG == 0, "INTERNAL_MAP_INCREMENT_DEG should divide 360 evenly");
 
 	// initialize internal obstacle map
-	_obstacle_map_body_frame.timestamp = getTime();
 	_obstacle_map_body_frame.frame = obstacle_distance_s::MAV_FRAME_BODY_FRD;
 	_obstacle_map_body_frame.increment = INTERNAL_MAP_INCREMENT_DEG;
 	_obstacle_map_body_frame.min_distance = UINT16_MAX;
@@ -523,7 +522,6 @@ CollisionPrevention::modifySetpoint(Vector2f &original_setpoint, const float max
 
 	// publish constraints
 	collision_constraints_s	constraints{};
-	constraints.timestamp = getTime();
 	original_setpoint.copyTo(constraints.original_setpoint);
 	new_setpoint.copyTo(constraints.adapted_setpoint);
 	_constraints_pub.publish(constraints);
@@ -534,7 +532,6 @@ CollisionPrevention::modifySetpoint(Vector2f &original_setpoint, const float max
 void CollisionPrevention::_publishVehicleCmdDoLoiter()
 {
 	vehicle_command_s command{};
-	command.timestamp = getTime();
 	command.command = vehicle_command_s::VEHICLE_CMD_DO_SET_MODE;
 	command.param1 = (float)1; // base mode
 	command.param3 = (float)0; // sub mode

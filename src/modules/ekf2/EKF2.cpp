@@ -334,8 +334,6 @@ void EKF2::Run()
 
 		// ekf2_timestamps (using 0.1 ms relative timestamps)
 		ekf2_timestamps_s ekf2_timestamps{};
-		ekf2_timestamps.timestamp = now;
-
 		ekf2_timestamps.airspeed_timestamp_rel = ekf2_timestamps_s::RELATIVE_TIMESTAMP_INVALID;
 		ekf2_timestamps.distance_sensor_timestamp_rel = ekf2_timestamps_s::RELATIVE_TIMESTAMP_INVALID;
 		ekf2_timestamps.optical_flow_timestamp_rel = ekf2_timestamps_s::RELATIVE_TIMESTAMP_INVALID;
@@ -653,7 +651,7 @@ void EKF2::Run()
 					auxVelSample auxvel_sample {};
 					auxvel_sample.vel = matrix::Vector3f{-landing_target_pose.vx_rel, -landing_target_pose.vy_rel, 0.0f};
 					auxvel_sample.velVar = matrix::Vector3f{landing_target_pose.cov_vx_rel, landing_target_pose.cov_vy_rel, 0.0f};
-					auxvel_sample.time_us = landing_target_pose.timestamp;
+					auxvel_sample.time_us = landing_target_pose.timestamp_sample;
 					_ekf.setAuxVelData(auxvel_sample);
 				}
 			}
@@ -801,7 +799,6 @@ void EKF2::Run()
 				}
 
 				// publish vehicle local position data
-				lpos.timestamp = _replay_mode ? now : hrt_absolute_time();
 				_vehicle_local_position_pub.update();
 
 				// publish vehicle_odometry
@@ -881,7 +878,6 @@ void EKF2::Run()
 					}
 
 					global_pos.dead_reckoning = _ekf.inertial_dead_reckoning(); // True if this position is estimated through dead-reckoning
-					global_pos.timestamp = _replay_mode ? now : hrt_absolute_time();
 					_vehicle_global_position_pub.update();
 				}
 			}
@@ -892,7 +888,6 @@ void EKF2::Run()
 			states.n_states = 24;
 			_ekf.getStateAtFusionHorizonAsVector().copyTo(states.states);
 			_ekf.covariances_diagonal().copyTo(states.covariances);
-			states.timestamp = _replay_mode ? now : hrt_absolute_time();
 			_estimator_states_pub.publish(states);
 
 			// publish estimator status
@@ -920,7 +915,6 @@ void EKF2::Run()
 			status.pre_flt_fail_innov_vel_vert = _preflt_checker.hasVertVelFailed();
 			status.pre_flt_fail_innov_height = _preflt_checker.hasHeightFailed();
 			status.pre_flt_fail_mag_field_disturbed = control_status.flags.mag_field_disturbed;
-			status.timestamp = _replay_mode ? now : hrt_absolute_time();
 			_estimator_status_pub.update();
 
 			{
@@ -950,7 +944,6 @@ void EKF2::Run()
 				bias.mag_bias_variance[1] = states.covariances[20];
 				bias.mag_bias_variance[2] = states.covariances[21];
 
-				bias.timestamp = _replay_mode ? now : hrt_absolute_time();
 				_estimator_sensor_bias_pub.publish(bias);
 			}
 
@@ -964,7 +957,6 @@ void EKF2::Run()
 				drift_data.vpos_drift_rate = gps_drift[1];
 				drift_data.hspd = gps_drift[2];
 				drift_data.blocked = blocked;
-				drift_data.timestamp = _replay_mode ? now : hrt_absolute_time();
 
 				_ekf_gps_drift_pub.publish(drift_data);
 			}
@@ -1125,13 +1117,8 @@ void EKF2::Run()
 					resetPreFlightChecks();
 				}
 
-				innovations.timestamp = _replay_mode ? now : hrt_absolute_time();
 				_estimator_innovations_pub.publish(innovations);
-
-				innovation_var.timestamp = _replay_mode ? now : hrt_absolute_time();
 				_estimator_innovation_variances_pub.publish(innovation_var);
-
-				test_ratios.timestamp = _replay_mode ? now : hrt_absolute_time();
 				_estimator_innovation_test_ratios_pub.publish(test_ratios);
 			}
 		}
@@ -1216,7 +1203,6 @@ void EKF2::publish_attitude(const hrt_abstime &timestamp)
 		q.copyTo(att.q);
 
 		_ekf.get_quat_reset(&att.delta_q_reset[0], &att.quat_reset_counter);
-		att.timestamp = _replay_mode ? timestamp : hrt_absolute_time();
 		_att_pub.publish(att);
 
 	}  else if (_replay_mode) {
@@ -1288,7 +1274,6 @@ void EKF2::publish_odometry(const hrt_abstime &timestamp, const imuSample &imu, 
 	odom.velocity_covariance[odom.COVARIANCE_MATRIX_VZ_VARIANCE] = covariances[6];
 
 	// publish vehicle odometry data
-	odom.timestamp = _replay_mode ? timestamp : hrt_absolute_time();
 	_vehicle_odometry_pub.publish(odom);
 }
 
@@ -1305,7 +1290,6 @@ void EKF2::publish_yaw_estimator_status(const hrt_abstime &timestamp)
 			       &yaw_est_test_data.weight[0])) {
 
 		yaw_est_test_data.timestamp_sample = timestamp;
-		yaw_est_test_data.timestamp = _replay_mode ? timestamp : hrt_absolute_time();
 
 		_yaw_est_pub.publish(yaw_est_test_data);
 	}
@@ -1330,7 +1314,6 @@ void EKF2::publish_wind_estimate(const hrt_abstime &timestamp)
 		wind_estimate.variance_north = wind_vel_var(0);
 		wind_estimate.variance_east = wind_vel_var(1);
 		wind_estimate.tas_scale = 0.0f; //leave at 0 as scale is not estimated in ekf
-		wind_estimate.timestamp = _replay_mode ? timestamp : hrt_absolute_time();
 
 		_wind_pub.publish(wind_estimate);
 	}

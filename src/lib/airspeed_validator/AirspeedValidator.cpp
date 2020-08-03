@@ -90,9 +90,8 @@ AirspeedValidator::update_wind_estimator(const uint64_t time_now_usec, float air
 wind_estimate_s
 AirspeedValidator::get_wind_estimator_states(uint64_t timestamp)
 {
-	wind_estimate_s wind_est = {};
+	wind_estimate_s wind_est{};
 
-	wind_est.timestamp = timestamp;
 	float wind[2];
 	_wind_estimator.get_wind(wind);
 	wind_est.windspeed_north = wind[0];

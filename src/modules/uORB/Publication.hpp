@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2012-2019 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2012-2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -51,15 +51,12 @@ namespace uORB
 class PublicationBase
 {
 public:
-
 	bool advertised() const { return _handle != nullptr; }
-
 	bool unadvertise() { return (DeviceNode::unadvertise(_handle) == PX4_OK); }
 
 	orb_id_t get_topic() const { return get_orb_meta(_orb_id); }
 
 protected:
-
 	PublicationBase(ORB_ID id) : _orb_id(id) {}
 
 	~PublicationBase()
@@ -107,11 +104,12 @@ public:
 	 */
 	bool publish(const T &data)
 	{
-		if (!advertised()) {
-			advertise();
+		if (advertised()) {
+			return static_cast<DeviceNode *>(_handle)->publish((uint8_t *)&data);
 		}
 
-		return (DeviceNode::publish(get_topic(), _handle, &data) == PX4_OK);
+		_handle = orb_advertise_queue(get_topic(), (uint8_t *)&data, ORB_QSIZE);
+		return advertised();
 	}
 };
 
@@ -137,8 +135,9 @@ public:
 	bool	update() { return Publication<T>::publish(_data); }
 	bool	update(const T &data)
 	{
+		bool ret = Publication<T>::publish(data);
 		_data = data;
-		return Publication<T>::publish(_data);
+		return ret;
 	}
 
 private:
@@ -148,7 +147,5 @@ private:
 
 template<class T>
 using PublicationQueued = Publication<T, T::ORB_QUEUE_LENGTH>;
-
-
 
 } // namespace uORB

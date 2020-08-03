@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2019 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2019-2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -40,6 +40,7 @@
 
 #include <px4_platform_common/defines.h>
 #include <systemlib/err.h>
+
 #include <uORB/uORB.h>
 
 #include "Publication.hpp"
@@ -48,9 +49,9 @@ namespace uORB
 {
 
 /**
- * Base publication multi wrapper class
+ * publication multi wrapper class
  */
-template<typename T, uint8_t QSIZE = 1>
+template<typename T, uint8_t ORB_QSIZE = 1>
 class PublicationMulti : public PublicationBase
 {
 public:
@@ -60,19 +61,14 @@ public:
 	 *
 	 * @param meta The uORB metadata (usually from the ORB_ID() macro) for the topic.
 	 */
-	PublicationMulti(ORB_ID id) :
-		PublicationBase(id)
-	{}
-
-	PublicationMulti(const orb_metadata *meta) :
-		PublicationBase(static_cast<ORB_ID>(meta->o_id))
-	{}
+	PublicationMulti(ORB_ID id) : PublicationBase(id) {}
+	PublicationMulti(const orb_metadata *meta) : PublicationBase(static_cast<ORB_ID>(meta->o_id)) {}
 
 	bool advertise()
 	{
 		if (!advertised()) {
 			int instance = 0;
-			_handle = orb_advertise_multi_queue(get_topic(), nullptr, &instance, QSIZE);
+			_handle = orb_advertise_multi_queue(get_topic(), nullptr, &instance, ORB_QSIZE);
 		}
 
 		return advertised();
@@ -84,11 +80,13 @@ public:
 	 */
 	bool publish(const T &data)
 	{
-		if (!advertised()) {
-			advertise();
+		if (advertised()) {
+			return static_cast<DeviceNode *>(_handle)->publish((uint8_t *)&data);
 		}
 
-		return (orb_publish(get_topic(), _handle, &data) == PX4_OK);
+		int instance = 0;
+		_handle = orb_advertise_multi_queue(get_topic(), (uint8_t *)&data, &instance, ORB_QSIZE);
+		return advertised();
 	}
 };
 
@@ -114,8 +112,9 @@ public:
 	bool	update() { return PublicationMulti<T>::publish(_data); }
 	bool	update(const T &data)
 	{
+		bool ret = PublicationMulti<T>::publish(data);
 		_data = data;
-		return PublicationMulti<T>::publish(_data);
+		return ret;
 	}
 
 private:

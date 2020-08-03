@@ -223,8 +223,6 @@ void RoboClaw::taskMain()
 			if (readEncoder() > 0) {
 
 				for (int i = 0; i < 2; i++) {
-					_wheelEncoderMsg[i].timestamp = encoderTaskLastRun;
-
 					_wheelEncoderMsg[i].encoder_position = _encoderCounts[i];
 					_wheelEncoderMsg[i].speed = _motorSpeeds[i];
 

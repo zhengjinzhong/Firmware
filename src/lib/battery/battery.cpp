@@ -127,7 +127,6 @@ Battery::updateBatteryStatus(hrt_abstime timestamp, float voltage_v, float curre
 			     float throttle_normalized)
 {
 	reset();
-	_battery_status.timestamp = timestamp;
 
 	if (!_battery_initialized) {
 		_voltage_filter_v.reset(voltage_v);
@@ -168,8 +167,6 @@ Battery::updateBatteryStatus(hrt_abstime timestamp, float voltage_v, float curre
 			_battery_status.voltage_cell_v[i] = _battery_status.voltage_filtered_v / _battery_status.cell_count;
 		}
 	}
-
-	_battery_status.timestamp = timestamp;
 
 	const bool should_publish = (source == _params.source);
 

@@ -81,7 +81,7 @@ CameraFeedback::Run()
 		camera_capture_s capture{};
 
 		// Fill timestamps
-		capture.timestamp = trig.timestamp;
+		capture.timestamp_trigger = trig.timestamp_trigger;
 		capture.timestamp_utc = trig.timestamp_utc;
 
 		// Fill image sequence

@@ -306,8 +306,6 @@ Thoneflow::collect()
 
 		/* Publish most recent valid measurement */
 		if (valid) {
-			_report.timestamp = hrt_absolute_time();
-
 			/* Rotate measurements from sensor frame to body frame */
 			float zeroval = 0.0f;
 			rotate_3f(_rotation, _report.pixel_flow_x_integral, _report.pixel_flow_y_integral, zeroval);

@@ -359,8 +359,6 @@ void VehicleMagnetometer::Publish(uint8_t instance, bool multi)
 		magnetometer_data.copyTo(out.magnetometer_ga);
 		out.calibration_count = _calibration[instance].calibration_count();
 
-		out.timestamp = hrt_absolute_time();
-
 		if (multi) {
 			_vehicle_magnetometer_multi_pub[instance].publish(out);
 
@@ -414,7 +412,6 @@ void VehicleMagnetometer::calcMagInconsistency()
 	// will be zero if there is only one magnetometer and hence nothing to compare
 	preflt.mag_inconsistency_angle = mag_angle_diff_max;
 
-	preflt.timestamp = hrt_absolute_time();
 	_sensor_preflight_mag_pub.publish(preflt);
 }
 

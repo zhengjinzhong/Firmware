@@ -125,7 +125,6 @@ int inject_failure(uint8_t unit, uint8_t type)
 
 	uORB::PublicationQueued<vehicle_command_s> command_pub{ORB_ID(vehicle_command)};
 	vehicle_command_s command{};
-	command.timestamp = now;
 	command.command = vehicle_command_s::VEHICLE_CMD_INJECT_FAILURE;
 	command.param1 = static_cast<float>(unit);
 	command.param2 = static_cast<float>(type);

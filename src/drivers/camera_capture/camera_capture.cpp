@@ -117,9 +117,9 @@ CameraCapture::publish_trigger()
 
 	// MODES 1 and 2 are not fully tested
 	if (_camera_capture_mode == 0 || _gpio_capture) {
-		trigger.timestamp = _trigger.edge_time - uint64_t(1000 * _strobe_delay);
+		trigger.timestamp_trigger = _trigger.edge_time - uint64_t(1000 * _strobe_delay);
 		trigger.seq = _capture_seq++;
-		_last_trig_time = trigger.timestamp;
+		_last_trig_time = trigger.timestamp_trigger;
 		publish = true;
 
 	} else if (_camera_capture_mode == 1) { // Get timestamp of mid-exposure (active high)
@@ -127,10 +127,10 @@ CameraCapture::publish_trigger()
 			_last_trig_begin_time = _trigger.edge_time - uint64_t(1000 * _strobe_delay);
 
 		} else if (_trigger.edge_state == 0 && _last_trig_begin_time > 0) {
-			trigger.timestamp = _trigger.edge_time - ((_trigger.edge_time - _last_trig_begin_time) / 2);
+			trigger.timestamp_trigger = _trigger.edge_time - ((_trigger.edge_time - _last_trig_begin_time) / 2);
 			trigger.seq = _capture_seq++;
 			_last_exposure_time = _trigger.edge_time - _last_trig_begin_time;
-			_last_trig_time = trigger.timestamp;
+			_last_trig_time = trigger.timestamp_trigger;
 			publish = true;
 			_capture_seq++;
 		}
@@ -140,10 +140,10 @@ CameraCapture::publish_trigger()
 			_last_trig_begin_time = _trigger.edge_time - uint64_t(1000 * _strobe_delay);
 
 		} else if (_trigger.edge_state == 1 && _last_trig_begin_time > 0) {
-			trigger.timestamp = _trigger.edge_time - ((_trigger.edge_time - _last_trig_begin_time) / 2);
+			trigger.timestamp_trigger = _trigger.edge_time - ((_trigger.edge_time - _last_trig_begin_time) / 2);
 			trigger.seq = _capture_seq++;
 			_last_exposure_time = _trigger.edge_time - _last_trig_begin_time;
-			_last_trig_time = trigger.timestamp;
+			_last_trig_time = trigger.timestamp_trigger;
 			publish = true;
 		}
 
@@ -195,7 +195,6 @@ CameraCapture::Run()
 			// Acknowledge the command
 			vehicle_command_ack_s command_ack{};
 
-			command_ack.timestamp = hrt_absolute_time();
 			command_ack.command = cmd.command;
 			command_ack.result = (uint8_t)vehicle_command_s::VEHICLE_CMD_RESULT_ACCEPTED;
 			command_ack.target_system = cmd.source_system;

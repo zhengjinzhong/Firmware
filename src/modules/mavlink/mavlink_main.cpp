@@ -2619,7 +2619,6 @@ void Mavlink::publish_telemetry_status()
 
 	// telemetry_status is also updated from the receiver thread, but never the same fields
 	lock_telemetry_status();
-	_tstatus.timestamp = hrt_absolute_time();
 	_telem_status_pub.publish(_tstatus);
 	_tstatus_updated = false;
 	unlock_telemetry_status();

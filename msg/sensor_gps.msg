@@ -1,6 +1,7 @@
 # GPS position in WGS84 coordinates.
 # the field 'timestamp' is for the position & velocity (microseconds)
 uint64 timestamp		# time since system start (microseconds)
+uint64 timestamp_sample         # the timestamp of the raw data (microseconds)
 
 int32 lat			# Latitude in 1E-7 degrees
 int32 lon			# Longitude in 1E-7 degrees

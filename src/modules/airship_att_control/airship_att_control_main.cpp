@@ -96,9 +96,6 @@ AirshipAttitudeControl::publish_actuator_controls()
 		_actuators.control[3] = _manual_control_sp.z;
 	}
 
-	// note: _actuators.timestamp_sample is set in AirshipAttitudeControl::Run()
-	_actuators.timestamp = hrt_absolute_time();
-
 	_actuators_0_pub.publish(_actuators);
 }
 

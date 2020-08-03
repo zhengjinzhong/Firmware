@@ -82,7 +82,6 @@ void TunePublisher::publish_next_tune(const hrt_abstime now)
 		tune_control.duration = static_cast<uint32_t>(duration);
 		tune_control.silence = static_cast<uint32_t>(silence);
 		tune_control.volume = static_cast<uint8_t>(volume);
-		tune_control.timestamp = now;
 		_tune_control_pub.publish(tune_control);
 
 		_next_publish_time = now + duration + silence;

@@ -98,7 +98,6 @@ MavlinkReceiver::acknowledge(uint8_t sysid, uint8_t compid, uint16_t command, ui
 {
 	vehicle_command_ack_s command_ack{};
 
-	command_ack.timestamp = hrt_absolute_time();
 	command_ack.command = command;
 	command_ack.result = result;
 	command_ack.target_system = sysid;
@@ -359,8 +358,6 @@ MavlinkReceiver::handle_message_command_long(mavlink_message_t *msg)
 
 	vehicle_command_s vcmd{};
 
-	vcmd.timestamp = hrt_absolute_time();
-
 	/* Copy the content of mavlink_command_long_t cmd_mavlink into command_t cmd */
 	vcmd.param1 = cmd_mavlink.param1;
 	vcmd.param2 = cmd_mavlink.param2;
@@ -388,7 +385,6 @@ MavlinkReceiver::handle_message_command_int(mavlink_message_t *msg)
 	mavlink_msg_command_int_decode(msg, &cmd_mavlink);
 
 	vehicle_command_s vcmd{};
-	vcmd.timestamp = hrt_absolute_time();
 
 	/* Copy the content of mavlink_command_int_t cmd_mavlink into command_t cmd */
 	vcmd.param1 = cmd_mavlink.param1;
@@ -455,8 +451,7 @@ void MavlinkReceiver::handle_message_command_both(mavlink_message_t *msg, const 
 							vehicle_command.param5, vehicle_command.param6, vehicle_command.param7);
 
 	} else if (cmd_mavlink.command == MAV_CMD_SET_CAMERA_ZOOM) {
-		struct actuator_controls_s actuator_controls = {};
-		actuator_controls.timestamp = hrt_absolute_time();
+		actuator_controls_s actuator_controls{};
 
 		for (size_t i = 0; i < 8; i++) {
 			actuator_controls.control[i] = NAN;
@@ -571,7 +566,6 @@ MavlinkReceiver::handle_message_command_ack(mavlink_message_t *msg)
 
 	vehicle_command_ack_s command_ack{};
 
-	command_ack.timestamp = hrt_absolute_time();
 	command_ack.result_param2 = ack.result_param2;
 	command_ack.command = ack.command;
 	command_ack.result = ack.result;
@@ -599,7 +593,6 @@ MavlinkReceiver::handle_message_optical_flow_rad(mavlink_message_t *msg)
 
 	optical_flow_s f{};
 
-	f.timestamp = hrt_absolute_time();
 	f.time_since_last_sonar_update = flow.time_delta_distance_us;
 	f.integration_timespan  = flow.integration_time_us;
 	f.pixel_flow_x_integral = flow.integrated_x;
@@ -630,7 +623,6 @@ MavlinkReceiver::handle_message_optical_flow_rad(mavlink_message_t *msg)
 
 		distance_sensor_s d{};
 
-		d.timestamp = f.timestamp;
 		d.min_distance = 0.3f;
 		d.max_distance = 5.0f;
 		d.current_distance = flow.distance; /* both are in m */
@@ -652,7 +644,6 @@ MavlinkReceiver::handle_message_hil_optical_flow(mavlink_message_t *msg)
 
 	optical_flow_s f{};
 
-	f.timestamp = hrt_absolute_time(); // XXX we rely on the system time for now and not flow.time_usec;
 	f.integration_timespan = flow.integration_time_us;
 	f.pixel_flow_x_integral = flow.integrated_x;
 	f.pixel_flow_y_integral = flow.integrated_y;
@@ -670,7 +661,6 @@ MavlinkReceiver::handle_message_hil_optical_flow(mavlink_message_t *msg)
 	/* Use distance value for distance sensor topic */
 	distance_sensor_s d{};
 
-	d.timestamp = hrt_absolute_time();
 	d.min_distance = 0.3f;
 	d.max_distance = 5.0f;
 	d.current_distance = flow.distance; /* both are in m */
@@ -692,8 +682,6 @@ MavlinkReceiver::handle_message_set_mode(mavlink_message_t *msg)
 	custom_mode.data = new_mode.custom_mode;
 
 	vehicle_command_s vcmd{};
-
-	vcmd.timestamp = hrt_absolute_time();
 
 	/* copy the content of mavlink_command_long_t cmd_mavlink into command_t cmd */
 	vcmd.param1 = (float)new_mode.base_mode;
@@ -719,7 +707,6 @@ MavlinkReceiver::handle_message_distance_sensor(mavlink_message_t *msg)
 
 	distance_sensor_s ds{};
 
-	ds.timestamp        = hrt_absolute_time(); /* Use system time for now, don't trust sender to attach correct timestamp */
 	ds.min_distance     = static_cast<float>(dist_sensor.min_distance) * 1e-2f;     /* cm to m */
 	ds.max_distance     = static_cast<float>(dist_sensor.max_distance) * 1e-2f;     /* cm to m */
 	ds.current_distance = static_cast<float>(dist_sensor.current_distance) * 1e-2f; /* cm to m */
@@ -750,7 +737,6 @@ MavlinkReceiver::handle_message_att_pos_mocap(mavlink_message_t *msg)
 
 	vehicle_odometry_s mocap_odom{};
 
-	mocap_odom.timestamp = hrt_absolute_time();
 	mocap_odom.timestamp_sample = _mavlink_timesync.sync_stamp(mocap.time_usec);
 
 	mocap_odom.x = mocap.x;
@@ -830,7 +816,6 @@ MavlinkReceiver::handle_message_set_position_target_local_ned(mavlink_message_t 
 					     | POSITION_TARGET_TYPEMASK::POSITION_TARGET_TYPEMASK_VZ_IGNORE
 					     | POSITION_TARGET_TYPEMASK::POSITION_TARGET_TYPEMASK_AZ_IGNORE));
 
-		offboard_control_mode.timestamp = hrt_absolute_time();
 		_offboard_control_mode_pub.publish(offboard_control_mode);
 
 		/* If we are in offboard control mode and offboard control loop through is enabled
@@ -850,7 +835,6 @@ MavlinkReceiver::handle_message_set_position_target_local_ned(mavlink_message_t 
 					/* It's not a pure force setpoint: publish to setpoint triplet  topic */
 					position_setpoint_triplet_s pos_sp_triplet{};
 
-					pos_sp_triplet.timestamp = hrt_absolute_time();
 					pos_sp_triplet.previous.valid = false;
 					pos_sp_triplet.next.valid = false;
 					pos_sp_triplet.current.valid = true;
@@ -1004,7 +988,6 @@ MavlinkReceiver::handle_message_set_position_target_global_int(mavlink_message_t
 
 		bool is_force_sp = (bool)(set_position_target_global_int.type_mask & (1 << 9));
 
-		offboard_control_mode.timestamp = hrt_absolute_time();
 		_offboard_control_mode_pub.publish(offboard_control_mode);
 
 		/* If we are in offboard control mode and offboard control loop through is enabled
@@ -1024,7 +1007,6 @@ MavlinkReceiver::handle_message_set_position_target_global_int(mavlink_message_t
 					/* It's not a pure force setpoint: publish to setpoint triplet  topic */
 					position_setpoint_triplet_s pos_sp_triplet{};
 
-					pos_sp_triplet.timestamp = hrt_absolute_time();
 					pos_sp_triplet.previous.valid = false;
 					pos_sp_triplet.next.valid = false;
 					pos_sp_triplet.current.valid = true;
@@ -1172,8 +1154,6 @@ MavlinkReceiver::handle_message_set_actuator_control_target(mavlink_message_t *m
 		offboard_control_mode.ignore_velocity           = ignore_setpoints;
 		offboard_control_mode.ignore_acceleration_force = ignore_setpoints;
 
-		offboard_control_mode.timestamp = hrt_absolute_time();
-
 		_offboard_control_mode_pub.publish(offboard_control_mode);
 
 		/* If we are in offboard control mode, publish the actuator controls */
@@ -1183,7 +1163,6 @@ MavlinkReceiver::handle_message_set_actuator_control_target(mavlink_message_t *m
 		if (control_mode.flag_control_offboard_enabled) {
 
 			actuator_controls_s actuator_controls{};
-			actuator_controls.timestamp = hrt_absolute_time();
 
 			/* Set duty cycles for the servos in the actuator_controls message */
 			for (size_t i = 0; i < 8; i++) {
@@ -1238,7 +1217,6 @@ MavlinkReceiver::handle_message_vision_position_estimate(mavlink_message_t *msg)
 
 	vehicle_odometry_s visual_odom{};
 
-	visual_odom.timestamp = hrt_absolute_time();
 	visual_odom.timestamp_sample = _mavlink_timesync.sync_stamp(ev.usec);
 
 	visual_odom.x = ev.x;
@@ -1277,7 +1255,6 @@ MavlinkReceiver::handle_message_odometry(mavlink_message_t *msg)
 
 	vehicle_odometry_s odometry{};
 
-	odometry.timestamp = hrt_absolute_time();
 	odometry.timestamp_sample = _mavlink_timesync.sync_stamp(odom.time_usec);
 
 	/* The position is in a local FRD frame */
@@ -1486,8 +1463,6 @@ MavlinkReceiver::handle_message_set_attitude_target(mavlink_message_t *msg)
 		offboard_control_mode.ignore_velocity = true;
 		offboard_control_mode.ignore_acceleration_force = true;
 
-		offboard_control_mode.timestamp = hrt_absolute_time();
-
 		_offboard_control_mode_pub.publish(offboard_control_mode);
 
 		/* If we are in offboard control mode and offboard control loop through is enabled
@@ -1503,8 +1478,7 @@ MavlinkReceiver::handle_message_set_attitude_target(mavlink_message_t *msg)
 
 				/* Publish attitude setpoint if attitude and thrust ignore bits are not set */
 				if (!(offboard_control_mode.ignore_attitude)) {
-					vehicle_attitude_setpoint_s att_sp = {};
-					att_sp.timestamp = hrt_absolute_time();
+					vehicle_attitude_setpoint_s att_sp{};
 
 					if (!ignore_attitude_msg) { // only copy att sp if message contained new data
 						matrix::Quatf q(set_attitude_target.q);
@@ -1540,8 +1514,6 @@ MavlinkReceiver::handle_message_set_attitude_target(mavlink_message_t *msg)
 
 					vehicle_rates_setpoint_s rates_sp{};
 
-					rates_sp.timestamp = hrt_absolute_time();
-
 					// only copy att rates sp if message contained new data
 					if (!ignore_bodyrate_msg_x) {
 						rates_sp.roll = set_attitude_target.body_roll_rate;
@@ -1576,7 +1548,6 @@ MavlinkReceiver::handle_message_radio_status(mavlink_message_t *msg)
 
 		radio_status_s status{};
 
-		status.timestamp = hrt_absolute_time();
 		status.rssi = rstatus.rssi;
 		status.remote_rssi = rstatus.remrssi;
 		status.txbuf = rstatus.txbuf;
@@ -1643,7 +1614,6 @@ MavlinkReceiver::handle_message_ping(mavlink_message_t *msg)
 
 			ping_s uorb_ping_msg{};
 
-			uorb_ping_msg.timestamp = now;
 			uorb_ping_msg.ping_time = ping.time_usec;
 			uorb_ping_msg.ping_sequence = ping.seq;
 			uorb_ping_msg.dropped_packets = pstats.dropped_packets;
@@ -1669,7 +1639,6 @@ MavlinkReceiver::handle_message_battery_status(mavlink_message_t *msg)
 	mavlink_msg_battery_status_decode(msg, &battery_mavlink);
 
 	battery_status_s battery_status{};
-	battery_status.timestamp = hrt_absolute_time();
 
 	float voltage_sum = 0.0f;
 	uint8_t cell_count = 0;
@@ -1809,7 +1778,6 @@ MavlinkReceiver::handle_message_obstacle_distance(mavlink_message_t *msg)
 
 	obstacle_distance_s obstacle_distance{};
 
-	obstacle_distance.timestamp = hrt_absolute_time();
 	obstacle_distance.sensor_type = mavlink_obstacle_distance.sensor_type;
 	memcpy(obstacle_distance.distances, mavlink_obstacle_distance.distances, sizeof(obstacle_distance.distances));
 
@@ -1836,8 +1804,6 @@ MavlinkReceiver::handle_message_trajectory_representation_bezier(mavlink_message
 
 	vehicle_trajectory_bezier_s trajectory_bezier{};
 
-	trajectory_bezier.timestamp =  _mavlink_timesync.sync_stamp(trajectory.time_usec);
-
 	for (int i = 0; i < vehicle_trajectory_bezier_s::NUMBER_POINTS; ++i) {
 		trajectory_bezier.control_points[i].position[0] = trajectory.pos_x[i];
 		trajectory_bezier.control_points[i].position[1] = trajectory.pos_y[i];
@@ -1859,7 +1825,6 @@ MavlinkReceiver::handle_message_trajectory_representation_waypoints(mavlink_mess
 
 	vehicle_trajectory_waypoint_s trajectory_waypoint{};
 
-	trajectory_waypoint.timestamp = hrt_absolute_time();
 	const int number_valid_points = trajectory.valid_points;
 
 	for (int i = 0; i < vehicle_trajectory_waypoint_s::NUMBER_POINTS; ++i) {
@@ -1949,7 +1914,6 @@ MavlinkReceiver::handle_message_rc_channels_override(mavlink_message_t *msg)
 	input_rc_s rc{};
 
 	// metadata
-	rc.timestamp = hrt_absolute_time();
 	rc.timestamp_last_signal = rc.timestamp;
 	rc.rssi = RC_INPUT_RSSI_MAX;
 	rc.rc_failsafe = false;
@@ -2013,7 +1977,6 @@ MavlinkReceiver::handle_message_manual_control(mavlink_message_t *msg)
 	if (_mavlink->should_generate_virtual_rc_input()) {
 
 		input_rc_s rc{};
-		rc.timestamp = hrt_absolute_time();
 		rc.timestamp_last_signal = rc.timestamp;
 
 		rc.channel_count = 8;
@@ -2050,7 +2013,6 @@ MavlinkReceiver::handle_message_manual_control(mavlink_message_t *msg)
 	} else {
 		manual_control_setpoint_s manual{};
 
-		manual.timestamp = hrt_absolute_time();
 		manual.x = man.x / 1000.0f;
 		manual.y = man.y / 1000.0f;
 		manual.r = man.r / 1000.0f;
@@ -2257,7 +2219,6 @@ MavlinkReceiver::handle_message_hil_sensor(mavlink_message_t *msg)
 	// differential pressure
 	if ((hil_sensor.fields_updated & SensorSource::DIFF_PRESS) == SensorSource::DIFF_PRESS) {
 		differential_pressure_s report{};
-		report.timestamp = timestamp;
 		report.temperature = hil_sensor.temperature;
 		report.differential_pressure_filtered_pa = hil_sensor.diff_pressure * 100.0f; // convert from millibar to bar;
 		report.differential_pressure_raw_pa = hil_sensor.diff_pressure * 100.0f; // convert from millibar to bar;
@@ -2269,7 +2230,6 @@ MavlinkReceiver::handle_message_hil_sensor(mavlink_message_t *msg)
 	{
 		battery_status_s hil_battery_status{};
 
-		hil_battery_status.timestamp = timestamp;
 		hil_battery_status.voltage_v = 11.5f;
 		hil_battery_status.voltage_filtered_v = 11.5f;
 		hil_battery_status.current_a = 10.0f;
@@ -2292,7 +2252,7 @@ MavlinkReceiver::handle_message_hil_gps(mavlink_message_t *msg)
 	hil_gps.timestamp_time_relative = 0;
 	hil_gps.time_utc_usec = gps.time_usec;
 
-	hil_gps.timestamp = timestamp;
+	hil_gps.timestamp_sample = timestamp;
 	hil_gps.lat = gps.lat;
 	hil_gps.lon = gps.lon;
 	hil_gps.alt = gps.alt;
@@ -2325,7 +2285,6 @@ MavlinkReceiver::handle_message_follow_target(mavlink_message_t *msg)
 
 	follow_target_s follow_target_topic{};
 
-	follow_target_topic.timestamp = hrt_absolute_time();
 	follow_target_topic.lat = follow_target_msg.lat * 1e-7;
 	follow_target_topic.lon = follow_target_msg.lon * 1e-7;
 	follow_target_topic.alt = follow_target_msg.alt;
@@ -2342,7 +2301,7 @@ MavlinkReceiver::handle_message_landing_target(mavlink_message_t *msg)
 	if (landing_target.position_valid && landing_target.frame == MAV_FRAME_LOCAL_NED) {
 		landing_target_pose_s landing_target_pose{};
 
-		landing_target_pose.timestamp = _mavlink_timesync.sync_stamp(landing_target.time_usec);
+		landing_target_pose.timestamp_sample = _mavlink_timesync.sync_stamp(landing_target.time_usec);
 		landing_target_pose.abs_pos_valid = true;
 		landing_target_pose.x_abs = landing_target.x;
 		landing_target_pose.y_abs = landing_target.y;
@@ -2353,7 +2312,6 @@ MavlinkReceiver::handle_message_landing_target(mavlink_message_t *msg)
 	} else {
 		irlock_report_s irlock_report{};
 
-		irlock_report.timestamp = hrt_absolute_time();
 		irlock_report.signature = landing_target.target_num;
 		irlock_report.pos_x = landing_target.angle_x;
 		irlock_report.pos_y = landing_target.angle_y;
@@ -2372,7 +2330,6 @@ MavlinkReceiver::handle_message_cellular_status(mavlink_message_t *msg)
 
 	cellular_status_s cellular_status{};
 
-	cellular_status.timestamp = hrt_absolute_time();
 	cellular_status.status = status.status;
 	cellular_status.failure_reason = status.failure_reason;
 	cellular_status.type = status.type;
@@ -2391,8 +2348,6 @@ MavlinkReceiver::handle_message_adsb_vehicle(mavlink_message_t *msg)
 	mavlink_msg_adsb_vehicle_decode(msg, &adsb);
 
 	transponder_report_s t{};
-
-	t.timestamp = hrt_absolute_time();
 
 	t.icao_address = adsb.ICAO_address;
 	t.lat = adsb.lat * 1e-7;
@@ -2450,7 +2405,6 @@ MavlinkReceiver::handle_message_utm_global_position(mavlink_message_t *msg)
 		float vz = utm_pos.vz / 100.0f;
 
 		transponder_report_s t{};
-		t.timestamp = hrt_absolute_time();
 		mav_array_memcpy(t.uas_id, utm_pos.uas_id, sizeof(px4_guid_t));
 		t.lat = utm_pos.lat * 1e-7;
 		t.lon = utm_pos.lon * 1e-7;
@@ -2512,7 +2466,6 @@ MavlinkReceiver::handle_message_collision(mavlink_message_t *msg)
 
 	collision_report_s collision_report{};
 
-	collision_report.timestamp = hrt_absolute_time();
 	collision_report.src = collision.src;
 	collision_report.id = collision.id;
 	collision_report.action = collision.action;
@@ -2547,13 +2500,10 @@ MavlinkReceiver::handle_message_hil_state_quaternion(mavlink_message_t *msg)
 	mavlink_hil_state_quaternion_t hil_state;
 	mavlink_msg_hil_state_quaternion_decode(msg, &hil_state);
 
-	const uint64_t timestamp = hrt_absolute_time();
-
 	/* airspeed */
 	{
 		airspeed_s airspeed{};
 
-		airspeed.timestamp = timestamp;
 		airspeed.indicated_airspeed_m_s = hil_state.ind_airspeed * 1e-2f;
 		airspeed.true_airspeed_m_s = hil_state.true_airspeed * 1e-2f;
 
@@ -2563,8 +2513,6 @@ MavlinkReceiver::handle_message_hil_state_quaternion(mavlink_message_t *msg)
 	/* attitude */
 	{
 		vehicle_attitude_s hil_attitude{};
-
-		hil_attitude.timestamp = timestamp;
 
 		matrix::Quatf q(hil_state.attitude_quaternion);
 		q.copyTo(hil_attitude.q);
@@ -2576,7 +2524,6 @@ MavlinkReceiver::handle_message_hil_state_quaternion(mavlink_message_t *msg)
 	{
 		vehicle_global_position_s hil_global_pos{};
 
-		hil_global_pos.timestamp = timestamp;
 		hil_global_pos.lat = hil_state.lat / ((double)1e7);
 		hil_global_pos.lon = hil_state.lon / ((double)1e7);
 		hil_global_pos.alt = hil_state.alt / 1000.0f;
@@ -2603,7 +2550,6 @@ MavlinkReceiver::handle_message_hil_state_quaternion(mavlink_message_t *msg)
 		map_projection_project(&_hil_local_proj_ref, lat, lon, &x, &y);
 
 		vehicle_local_position_s hil_local_pos{};
-		hil_local_pos.timestamp = timestamp;
 
 		hil_local_pos.ref_timestamp = _hil_local_proj_ref.timestamp;
 		hil_local_pos.ref_lat = math::radians(_hil_local_proj_ref.lat_rad);
@@ -2646,7 +2592,7 @@ MavlinkReceiver::handle_message_hil_state_quaternion(mavlink_message_t *msg)
 		if (_px4_accel != nullptr) {
 			// accel in mG
 			_px4_accel->set_scale(CONSTANTS_ONE_G / 1000.0f);
-			_px4_accel->update(timestamp, hil_state.xacc, hil_state.yacc, hil_state.zacc);
+			_px4_accel->update(hrt_absolute_time(), hil_state.xacc, hil_state.yacc, hil_state.zacc);
 		}
 	}
 
@@ -2662,7 +2608,7 @@ MavlinkReceiver::handle_message_hil_state_quaternion(mavlink_message_t *msg)
 		}
 
 		if (_px4_gyro != nullptr) {
-			_px4_gyro->update(timestamp, hil_state.rollspeed, hil_state.pitchspeed, hil_state.yawspeed);
+			_px4_gyro->update(hrt_absolute_time(), hil_state.rollspeed, hil_state.pitchspeed, hil_state.yawspeed);
 		}
 	}
 
@@ -2670,7 +2616,6 @@ MavlinkReceiver::handle_message_hil_state_quaternion(mavlink_message_t *msg)
 	{
 		battery_status_s hil_battery_status{};
 
-		hil_battery_status.timestamp = timestamp;
 		hil_battery_status.voltage_v = 11.1f;
 		hil_battery_status.voltage_filtered_v = 11.1f;
 		hil_battery_status.current_a = 10.0f;
@@ -2688,7 +2633,6 @@ MavlinkReceiver::handle_message_named_value_float(mavlink_message_t *msg)
 
 	debug_key_value_s debug_topic{};
 
-	debug_topic.timestamp = hrt_absolute_time();
 	memcpy(debug_topic.key, debug_msg.name, sizeof(debug_topic.key));
 	debug_topic.key[sizeof(debug_topic.key) - 1] = '\0'; // enforce null termination
 	debug_topic.value = debug_msg.value;
@@ -2704,7 +2648,6 @@ MavlinkReceiver::handle_message_debug(mavlink_message_t *msg)
 
 	debug_value_s debug_topic{};
 
-	debug_topic.timestamp = hrt_absolute_time();
 	debug_topic.ind = debug_msg.ind;
 	debug_topic.value = debug_msg.value;
 
@@ -2719,7 +2662,6 @@ MavlinkReceiver::handle_message_debug_vect(mavlink_message_t *msg)
 
 	debug_vect_s debug_topic{};
 
-	debug_topic.timestamp = hrt_absolute_time();
 	memcpy(debug_topic.name, debug_msg.name, sizeof(debug_topic.name));
 	debug_topic.name[sizeof(debug_topic.name) - 1] = '\0'; // enforce null termination
 	debug_topic.x = debug_msg.x;
@@ -2737,7 +2679,6 @@ MavlinkReceiver::handle_message_debug_float_array(mavlink_message_t *msg)
 
 	debug_array_s debug_topic{};
 
-	debug_topic.timestamp = hrt_absolute_time();
 	debug_topic.id = debug_msg.array_id;
 	memcpy(debug_topic.name, debug_msg.name, sizeof(debug_topic.name));
 	debug_topic.name[sizeof(debug_topic.name) - 1] = '\0'; // enforce null termination
@@ -2757,7 +2698,6 @@ MavlinkReceiver::handle_message_onboard_computer_status(mavlink_message_t *msg)
 
 	onboard_computer_status_s onboard_computer_status_topic{};
 
-	onboard_computer_status_topic.timestamp = hrt_absolute_time();
 	onboard_computer_status_topic.uptime = status_msg.uptime;
 
 	onboard_computer_status_topic.type = status_msg.type;
@@ -2790,7 +2730,6 @@ void MavlinkReceiver::handle_message_generator_status(mavlink_message_t *msg)
 	mavlink_msg_generator_status_decode(msg, &status_msg);
 
 	generator_status_s generator_status{};
-	generator_status.timestamp = hrt_absolute_time();
 	generator_status.status = status_msg.status;
 	generator_status.battery_current = status_msg.battery_current;
 	generator_status.load_current = status_msg.load_current;
@@ -2817,7 +2756,6 @@ void MavlinkReceiver::handle_message_statustext(mavlink_message_t *msg)
 		log_message_s log_message{};
 
 		log_message.severity = statustext.severity;
-		log_message.timestamp = hrt_absolute_time();
 
 		snprintf(log_message.text, sizeof(log_message.text),
 			 "[mavlink: component %d] %." STRINGIFY(MAVLINK_MSG_STATUSTEXT_FIELD_TEXT_LEN) "s", msg->compid, statustext.text);

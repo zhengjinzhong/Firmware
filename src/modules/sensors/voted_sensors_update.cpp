@@ -62,7 +62,6 @@ VotedSensorsUpdate::VotedSensorsUpdate(bool hil_enabled, uORB::SubscriptionCallb
 int VotedSensorsUpdate::init(sensor_combined_s &raw)
 {
 	raw.accelerometer_timestamp_relative = sensor_combined_s::RELATIVE_TIMESTAMP_INVALID;
-	raw.timestamp = 0;
 
 	initializeSensors();
 
@@ -354,7 +353,6 @@ void VotedSensorsUpdate::sensorsPoll(sensor_combined_s &raw)
 		if (_selection_changed) {
 			// don't publish until selected IDs are valid
 			if (_selection.accel_device_id > 0 && _selection.gyro_device_id > 0) {
-				_selection.timestamp = hrt_absolute_time();
 				_sensor_selection_pub.publish(_selection);
 				_selection_changed = false;
 			}
@@ -390,8 +388,6 @@ void VotedSensorsUpdate::sensorsPoll(sensor_combined_s &raw)
 		}
 	}
 
-
-	status.timestamp = hrt_absolute_time();
 	_sensors_status_imu_pub.publish(status);
 }
 

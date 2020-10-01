@@ -42,12 +42,12 @@ px4_add_module(
 	SRCS
 		mc_pos_control_main.cpp
 	DEPENDS
-		PositionControl
-		controllib
 		FlightTasks
+		PositionControl
+		Takeoff
 		git_ecl
 		ecl_geo
+		mathlib
 		WeatherVane
 		CollisionPrevention
-		Takeoff
 	)

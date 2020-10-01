@@ -180,6 +180,9 @@ private:
 		(ParamFloat<px4::params::MPC_THR_MAX>) _param_mpc_thr_max
 	);
 
+	static constexpr uint32_t SCHEDULE_INTERVAL_US{20_ms};
+	static constexpr uint32_t SCHEDULE_RATE_HZ{1_s / SCHEDULE_INTERVAL_US};
+	
 	matrix::Vector3f _velocity{};
 	math::LowPassFilter2pVector3f _vel_deriv_lpf{SCHEDULE_RATE_HZ, 5.f};  /**< velocity derivative filter */
 
@@ -191,9 +194,6 @@ private:
 	bool _in_failsafe = false; /**< true if failsafe was entered within current cycle */
 
 	bool _hover_thrust_initialized{false};
-
-	static constexpr uint32_t SCHEDULE_INTERVAL_US{20000};
-	static constexpr uint32_t SCHEDULE_RATE_HZ{1000000 / SCHEDULE_INTERVAL_US};
 
 	/** Timeout in us for trajectory data to get considered invalid */
 	static constexpr uint64_t TRAJECTORY_STREAM_TIMEOUT_US = 500_ms;

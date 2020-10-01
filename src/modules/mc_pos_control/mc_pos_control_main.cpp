@@ -182,7 +182,7 @@ private:
 
 	static constexpr uint32_t SCHEDULE_INTERVAL_US{20_ms};
 	static constexpr uint32_t SCHEDULE_RATE_HZ{1_s / SCHEDULE_INTERVAL_US};
-	
+
 	matrix::Vector3f _velocity{};
 	math::LowPassFilter2pVector3f _vel_deriv_lpf{SCHEDULE_RATE_HZ, 5.f};  /**< velocity derivative filter */
 
@@ -307,8 +307,6 @@ MulticopterPositionControl::init()
 	// limit to every other vehicle_local_position update (50 Hz)
 	_local_pos_sub.set_interval_us(SCHEDULE_INTERVAL_US);
 
-	_time_stamp_last_loop = hrt_absolute_time();
-
 	return true;
 }
 
@@ -399,7 +397,6 @@ MulticopterPositionControl::poll_subscriptions()
 {
 	_vehicle_status_sub.update(&_vehicle_status);
 	_vehicle_land_detected_sub.update(&_vehicle_land_detected);
-	_control_mode_sub.update(&_control_mode);
 	_home_pos_sub.update(&_home_pos);
 
 	if (_param_mpc_use_hte.get()) {
@@ -455,19 +452,27 @@ MulticopterPositionControl::Run()
 
 	perf_begin(_cycle_perf);
 
+	// require at least flag_control_climb_rate_enabled to run
+	_control_mode_sub.update(&_control_mode);
 	vehicle_local_position_s local_pos;
 
-	if (_local_pos_sub.update(&local_pos)) {
+	if (_control_mode.flag_control_climb_rate_enabled && _local_pos_sub.update(&local_pos)) {
+
+		const Vector3f velocity{local_pos.vx, local_pos.vy, local_pos.vz};
 
 		poll_subscriptions();
 		parameters_update(false);
 
-		const hrt_abstime time_stamp_now = local_pos.timestamp_sample;
+		const hrt_abstime &time_stamp_now = local_pos.timestamp_sample;
+
+		if (_time_stamp_last_loop == 0) {
+			_time_stamp_last_loop = local_pos.timestamp_sample - SCHEDULE_INTERVAL_US;
+			_velocity = velocity;
+		}
+
 		const float dt = math::constrain(((time_stamp_now - _time_stamp_last_loop) * 1e-6f), 0.002f, 0.04f);
 		_time_stamp_last_loop = time_stamp_now;
 
-		// update states for position controller
-		const Vector3f velocity{local_pos.vx, local_pos.vy, local_pos.vz};
 		const Vector3f velocity_derivative{(velocity - _velocity) / dt};
 		const Vector3f acceleration = _vel_deriv_lpf.apply(velocity_derivative);
 		_velocity = velocity;
@@ -654,6 +659,11 @@ MulticopterPositionControl::Run()
 
 			_old_landing_gear_position = gear.landing_gear;
 		}
+
+	} else {
+		_velocity.zero();
+		_vel_deriv_lpf.reset({0, 0, 0});
+		_time_stamp_last_loop = 0;
 	}
 
 	perf_end(_cycle_perf);

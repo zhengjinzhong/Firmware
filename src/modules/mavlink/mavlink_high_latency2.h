@@ -63,7 +63,7 @@
 class MavlinkStreamHighLatency2 : public MavlinkStream
 {
 public:
-	const char *get_name() const
+	const char *get_name() const override
 	{
 		return MavlinkStreamHighLatency2::get_name_static();
 	}
@@ -78,7 +78,7 @@ public:
 		return MAVLINK_MSG_ID_HIGH_LATENCY2;
 	}
 
-	uint16_t get_id()
+	uint16_t get_id() override
 	{
 		return get_id_static();
 	}
@@ -88,12 +88,12 @@ public:
 		return new MavlinkStreamHighLatency2(mavlink);
 	}
 
-	unsigned get_size()
+	unsigned get_size() override
 	{
 		return MAVLINK_MSG_ID_HIGH_LATENCY2_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES;
 	}
 
-	bool const_rate()
+	bool const_rate() const override
 	{
 		return true;
 	}
@@ -147,7 +147,7 @@ private:
 protected:
 	explicit MavlinkStreamHighLatency2(Mavlink *mavlink);
 
-	bool send(const hrt_abstime t);
+	bool send(const hrt_abstime t) override;
 
 	void reset_analysers(const hrt_abstime t);
 
@@ -175,7 +175,7 @@ protected:
 
 	bool write_wind_estimate(mavlink_high_latency2_t *msg);
 
-	void update_data();
+	void update_data() override;
 
 	void update_airspeed();
 

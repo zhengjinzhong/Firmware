@@ -419,7 +419,7 @@ public:
 		return MAVLINK_MSG_ID_HEARTBEAT_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES;
 	}
 
-	bool const_rate() override
+	bool const_rate() const override
 	{
 		return true;
 	}
@@ -2052,7 +2052,7 @@ public:
 		return new MavlinkStreamADSBVehicle(mavlink);
 	}
 
-	bool const_rate() override
+	bool const_rate() const override
 	{
 		return true;
 	}
@@ -2148,7 +2148,7 @@ public:
 		return new MavlinkStreamUTMGlobalPosition(mavlink);
 	}
 
-	bool const_rate() override
+	bool const_rate() const override
 	{
 		return true;
 	}
@@ -2392,7 +2392,7 @@ public:
 		return new MavlinkStreamCameraTrigger(mavlink);
 	}
 
-	bool const_rate() override
+	bool const_rate() const override
 	{
 		return true;
 	}
@@ -2492,7 +2492,7 @@ public:
 		return get_id_static();
 	}
 
-	bool const_rate() override
+	bool const_rate() const override
 	{
 		return true;
 	}
@@ -5171,7 +5171,7 @@ public:
 		return MAVLINK_MSG_ID_PING_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES;
 	}
 
-	bool const_rate() override
+	bool const_rate() const override
 	{
 		return true;
 	}

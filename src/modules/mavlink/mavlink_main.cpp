@@ -794,6 +794,8 @@ void Mavlink::send_start(int length)
 		// not enough space in buffer to send
 		count_txerrbytes(length);
 
+		_tstatus.tx_buffer_overruns++;
+
 		// prevent writes
 		_tx_buffer_low = true;
 
@@ -859,6 +861,7 @@ void Mavlink::send_finish()
 #endif // MAVLINK_UDP
 
 	if (ret == (int)_buf_fill) {
+		_tstatus.tx_message_count++;
 		count_txbytes(_buf_fill);
 		_last_write_success_time = _last_write_try_time;
 
@@ -1500,8 +1503,8 @@ Mavlink::update_rate_mult()
 	float hardware_mult = 1.0f;
 
 	/* scale down if we have a TX err rate suggesting link congestion */
-	if (_tstatus.rate_txerr > 0.0f && !_radio_status_critical) {
-		hardware_mult = (_tstatus.rate_tx) / (_tstatus.rate_tx + _tstatus.rate_txerr);
+	if (_tstatus.tx_rate_avg > 0.0f && !_radio_status_critical) {
+		hardware_mult = (_tstatus.tx_rate_avg) / (_tstatus.tx_rate_avg + _tstatus.tx_error_rate_avg);
 
 	} else if (_radio_status_available) {
 
@@ -1595,6 +1598,7 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		configure_stream_local("GPS2_RAW", 1.0f);
 		configure_stream_local("GPS_RAW_INT", 1.0f);
 		configure_stream_local("HOME_POSITION", 0.5f);
+		configure_stream_local("LINK_NODE_STATUS", 1.0f);
 		configure_stream_local("LOCAL_POSITION_NED", 1.0f);
 		configure_stream_local("NAMED_VALUE_FLOAT", 1.0f);
 		configure_stream_local("NAV_CONTROLLER_OUTPUT", 1.0f);
@@ -1645,6 +1649,7 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		configure_stream_local("GPS2_RAW", unlimited_rate);
 		configure_stream_local("GPS_RAW_INT", unlimited_rate);
 		configure_stream_local("HOME_POSITION", 0.5f);
+		configure_stream_local("LINK_NODE_STATUS", 1.0f);
 		configure_stream_local("NAMED_VALUE_FLOAT", 10.0f);
 		configure_stream_local("NAV_CONTROLLER_OUTPUT", 10.0f);
 		configure_stream_local("OPTICAL_FLOW_RAD", 10.0f);
@@ -1694,6 +1699,7 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		configure_stream_local("GPS2_RAW", 1.0f);
 		configure_stream_local("GPS_RAW_INT", 1.0f);
 		configure_stream_local("HOME_POSITION", 0.5f);
+		configure_stream_local("LINK_NODE_STATUS", 1.0f);
 		configure_stream_local("NAMED_VALUE_FLOAT", 1.0f);
 		configure_stream_local("NAV_CONTROLLER_OUTPUT", 1.5f);
 		configure_stream_local("OPTICAL_FLOW_RAD", 1.0f);
@@ -1768,6 +1774,7 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		configure_stream_local("GPS_RAW_INT", unlimited_rate);
 		configure_stream_local("HIGHRES_IMU", 50.0f);
 		configure_stream_local("HOME_POSITION", 0.5f);
+		configure_stream_local("LINK_NODE_STATUS", 1.0f);
 		configure_stream_local("MANUAL_CONTROL", 5.0f);
 		configure_stream_local("NAMED_VALUE_FLOAT", 50.0f);
 		configure_stream_local("NAV_CONTROLLER_OUTPUT", 10.0f);
@@ -1801,6 +1808,7 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		configure_stream_local("GLOBAL_POSITION_INT", 5.0f);
 		configure_stream_local("GPS_RAW_INT", 0.5f);
 		configure_stream_local("HOME_POSITION", 0.1f);
+		configure_stream_local("LINK_NODE_STATUS", 0.1f);
 		configure_stream_local("NAMED_VALUE_FLOAT", 1.0f);
 		configure_stream_local("RC_CHANNELS", 0.5f);
 		configure_stream_local("SYS_STATUS", 0.1f);
@@ -2472,11 +2480,11 @@ Mavlink::task_main(int argc, char *argv[])
 		/* update TX/RX rates*/
 		if (t > _bytes_timestamp + 1000000) {
 			if (_bytes_timestamp != 0) {
-				const float dt = (t - _bytes_timestamp) / 1000.0f;
+				const float dt = (t - _bytes_timestamp) * 1e-6f;
 
-				_tstatus.rate_tx = _bytes_tx / dt;
-				_tstatus.rate_txerr = _bytes_txerr / dt;
-				_tstatus.rate_rx = _bytes_rx / dt;
+				_tstatus.tx_rate_avg = _bytes_tx / dt;
+				_tstatus.tx_error_rate_avg = _bytes_txerr / dt;
+				_tstatus.rx_rate_avg = _bytes_rx / dt;
 
 				_bytes_tx = 0;
 				_bytes_txerr = 0;
@@ -2796,11 +2804,11 @@ Mavlink::display_status()
 
 	printf("\tflow control: %s\n", _flow_control_mode ? "ON" : "OFF");
 	printf("\trates:\n");
-	printf("\t  tx: %.3f kB/s\n", (double)_tstatus.rate_tx);
-	printf("\t  txerr: %.3f kB/s\n", (double)_tstatus.rate_txerr);
+	printf("\t  tx: %.1f B/s\n", (double)_tstatus.tx_rate_avg);
+	printf("\t  txerr: %.1f B/s\n", (double)_tstatus.tx_error_rate_avg);
 	printf("\t  tx rate mult: %.3f\n", (double)_rate_mult);
 	printf("\t  tx rate max: %i B/s\n", _datarate);
-	printf("\t  rx: %.3f kB/s\n", (double)_tstatus.rate_rx);
+	printf("\t  rx: %.1f B/s\n", (double)_tstatus.rx_rate_avg);
 
 	if (_mavlink_ulog) {
 		printf("\tULog rate: %.1f%% of max %.1f%%\n", (double)_mavlink_ulog->current_data_rate() * 100.,
